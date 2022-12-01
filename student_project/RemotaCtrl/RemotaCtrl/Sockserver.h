@@ -4,6 +4,25 @@ class Cpacket
 {
 public:
 	Cpacket():m_sHead(0),m_Length(0),m_sCmd(0),m_sSun(0) {}
+	Cpacket(const Cpacket& cp) {
+		m_Length = cp.m_Length;
+		m_sCmd = cp.m_sCmd;
+		m_sHead = cp.m_sHead;
+		m_sSun = cp.m_sSun;
+		m_strData = cp.m_strData;
+	}
+
+	Cpacket& operator=(const Cpacket& cp) {
+		if (this != &cp) {
+			m_Length = cp.m_Length;
+			m_sCmd = cp.m_sCmd;
+			m_sHead = cp.m_sHead;
+			m_sSun = cp.m_sSun;
+			m_strData = cp.m_strData;
+		}
+		return *this;
+	}
+
 	Cpacket(const BYTE* pData, int& nSize) {
 		size_t i = 0;
 		for (; i < nSize; i++) {
