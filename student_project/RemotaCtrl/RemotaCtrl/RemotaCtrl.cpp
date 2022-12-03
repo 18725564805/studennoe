@@ -98,6 +98,61 @@ int MakeDirectoryInfo() { //获取指定文件夹下的信息。
     return 0;
 }
 
+int RunFile() {
+
+    std::string strpath;
+    if (CSockserver::getinstance()->GetFilepath(strpath) == false) {
+        return -1; //获取失败
+    }
+    //打开指定路径的文件，若文件为  .exe（程序文件）也会执行该程序，类型与Linux下的execl函数族
+    ShellExecuteA(NULL, NULL, strpath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+
+    Cpacket pack(3, NULL, 0);
+    CSockserver::getinstance()->Send(pack);
+
+    return 0;  //获取成功
+}
+
+#define BUF_SIZE 1024
+int DownloadFile() {
+    std::string strPath;
+    long long data = 0;
+    CSockserver::getinstance()->GetFilepath(strPath);
+    FILE* pfile = NULL;
+    errno_t err = fopen_s(&pfile ,strPath.c_str(), "rb");
+    if (err != 0) {
+        Cpacket pack(4, (BYTE*)&data, 8);
+        CSockserver::getinstance()->Send(pack);
+        return -1;
+    }
+
+    if (pfile != NULL) {
+        //先发送文件的大小过去
+        fseek(pfile, 0, SEEK_END);
+        data = _ftelli64(pfile);
+        Cpacket pack(4, (BYTE*)&data, 8);
+        CSockserver::getinstance()->Send(pack);
+        fseek(pfile, 0, SEEK_SET);
+
+        //正式发送文件内容
+        char* buf = new char[BUF_SIZE];
+        size_t relen = 0;
+        do {
+            relen = fread(buf, 1, BUF_SIZE, pfile);
+            Cpacket pack(4, (BYTE*)buf, relen);
+            CSockserver::getinstance()->Send(pack);
+
+        } while (relen >= BUF_SIZE);
+
+        delete[]buf;
+    }
+    fclose(pfile);
+
+    Cpacket pack1(4, NULL, 0);//最后发送一个作为结尾标志。
+    CSockserver::getinstance()->Send(pack1);
+    return 0;
+}
+
 int main()
 {
     int nRetCode = 0;
@@ -141,7 +196,13 @@ int main()
                 MakeDriveInfo();
                 break;
             case 2:  //查看指定目录下的文件。
-
+                MakeDirectoryInfo();
+                break;
+            case 3: //打开文件
+                RunFile();
+                break;
+            case 4:
+                DownloadFile();
                 break;
             }
             

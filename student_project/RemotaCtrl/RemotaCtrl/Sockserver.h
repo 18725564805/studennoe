@@ -13,8 +13,13 @@ public:
 		m_sHead = 0xFEFF;
 		m_Length = nSize + 4;
 		m_sCmd = Cmd;
-		m_strData.resize(nSize);
-		memcpy((void*)m_strData.c_str(), (void*)pData, nSize);
+		if (nSize > 0) {
+			m_strData.resize(nSize);
+			memcpy((void*)m_strData.c_str(), (void*)pData, nSize);
+		}
+		else {
+			m_strData.clear();
+		}
 		m_sSun = 0; //ºÍÐ£Ñé
 		for (int j = 0; j < m_strData.size(); j++) {
 			m_sSun += BYTE(m_strData[j]) & 0xFF;
@@ -188,7 +193,7 @@ public:
 	}
 
 	bool GetFilepath(std::string& path) {
-		if (m_pack.m_sCmd == 2) {
+		if ((m_pack.m_sCmd <= 4) && (m_pack.m_sCmd >= 2)) {
 			path = m_pack.m_strData;
 			return true;
 		}
