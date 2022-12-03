@@ -1,4 +1,5 @@
 #pragma once
+#include "framework.h"
 
 #pragma pack(push) //将系统的默认对齐数保存
 #pragma pack(1)    // 修改系统的默认对齐数
@@ -103,7 +104,7 @@ public:
 	WORD m_sHead; //包头 固定位 0xFEFF
 	DWORD m_Length;//包长度（从包命令开始，到校验位置的长度）
 	WORD m_sCmd;//包命令
-	std::string m_strData; //包数据
+	std::string m_strData; //包命令
 	WORD m_sSun;//数据包的和校验
    std::string strOut;//最终的数据包,将所有数据都打包到strOut中
 };
@@ -184,6 +185,14 @@ public:
 	bool Send(Cpacket& pack) {
 		if (m_client == -1) return false;
 		return send(m_client, pack.Data(), pack.Size(), 0) > 0;
+	}
+
+	bool GetFilepath(std::string& path) {
+		if (m_pack.m_sCmd == 2) {
+			path = m_pack.m_strData;
+			return true;
+		}
+		return false;
 	}
 
 private:
