@@ -1,9 +1,25 @@
 #pragma once
 
+#pragma pack(push) //将系统的默认对齐数保存
+#pragma pack(1)    // 修改系统的默认对齐数
 class Cpacket
 {
 public:
 	Cpacket():m_sHead(0),m_Length(0),m_sCmd(0),m_sSun(0) {}
+
+	//数据打包构造函数  nSize代表pData指向的数据的长度
+	Cpacket(WORD Cmd, const BYTE*pData, size_t nSize) {
+		m_sHead = 0xFEFF;
+		m_Length = nSize + 4;
+		m_sCmd = Cmd;
+		m_strData.resize(nSize);
+		memcpy((void*)m_strData.c_str(), (void*)pData, nSize);
+		m_sSun = 0; //和校验
+		for (int j = 0; j < m_strData.size(); j++) {
+			m_sSun += BYTE(m_strData[j]) & 0xFF;
+		}
+	}
+
 	Cpacket(const Cpacket& cp) {
 		m_Length = cp.m_Length;
 		m_sCmd = cp.m_sCmd;
@@ -23,7 +39,8 @@ public:
 		return *this;
 	}
 
-	Cpacket(const BYTE* pData, int& nSize) {
+	//数据解包构造
+	Cpacket(const BYTE* pData, int& nSize) { 
 		size_t i = 0;
 		for (; i < nSize; i++) {
 			if (*(WORD*)pData == 0xFEFF) {
@@ -67,14 +84,30 @@ public:
 	}
 	~Cpacket() {}
 
+	int Size() {
+		return m_Length + 6;
+	}
+
+	const char* Data() {
+		strOut.resize(this->Size());
+		BYTE* pData = (BYTE*)&strOut;
+		*(WORD*)pData = m_sHead; pData += 2;
+		*(DWORD*)pData = m_Length; pData += 4;
+		*(WORD*)pData = m_sCmd; pData += 2;
+		memcpy((void*)pData, m_strData.c_str(), m_strData.size());
+		pData += m_strData.size();
+		return strOut.c_str();
+	}
+
 public:
 	WORD m_sHead; //包头 固定位 0xFEFF
 	DWORD m_Length;//包长度（从包命令开始，到校验位置的长度）
 	WORD m_sCmd;//包命令
 	std::string m_strData; //包数据
 	WORD m_sSun;//数据包的和校验
+   std::string strOut;//最终的数据包,将所有数据都打包到strOut中
 };
-
+#pragma pack(pop)//将系统的默认对齐数还原
 
 class CSockserver
 {
@@ -146,6 +179,11 @@ public:
 	bool Send(const char* pData, int size) {
 		if (m_client == -1) return false;
 		return send(m_client, pData, size, 0) > 0;
+	}
+
+	bool Send(Cpacket& pack) {
+		if (m_client == -1) return false;
+		return send(m_client, pack.Data(), pack.Size(), 0) > 0;
 	}
 
 private:

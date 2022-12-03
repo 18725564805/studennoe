@@ -17,7 +17,23 @@ CWinApp theApp;
 
 using namespace std;
 
+std::string MakeDriveInfo() { 
+    //函数参数：1--》A盘  2--》B盘 （A，B都属于软盘） 3--》C盘 类推
+    std::string result;
+    for (int i = 0; i < 26; i++) {
+        if (_chdrive(i + 1) == 0) {
+            if (result.size() > 0) {
+                result += ',';
+            }
+            result += 'A' + i;
+        }
+    }
 
+    Cpacket pack(1, (BYTE*)result.c_str(), result.size());
+    CSockserver::getinstance()->Send(pack);
+    //_chdrive(); //改变当前的驱动。
+    return 0;
+}
 
 int main()
 {
@@ -56,7 +72,12 @@ int main()
             //        pserver->Dealcommnat();
             //    }
             //}
-
+            int nCmd = 1;
+            switch (1) {
+            case 1: //查看磁盘分区。
+                MakeDriveInfo();
+                break;
+            }
             
         }
     }
