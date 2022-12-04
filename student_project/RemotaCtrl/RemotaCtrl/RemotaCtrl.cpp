@@ -158,7 +158,7 @@ int  MouseEvent() {
     MOUSEEV mouse;
     WORD nFlags = 0;
     if (CSockserver::getinstance()->GetMouseEvent(mouse)) {
-        switch (mouse->nButton) { //哪一个鼠标按钮被按下
+        switch (mouse.nButton) { //哪一个鼠标按钮被按下
         case 0://左键
             nFlags = 0x0001;//第一个bit位
             break;
@@ -172,8 +172,8 @@ int  MouseEvent() {
             nFlags = 0x0008;//鼠标移动，没有按下按钮
             break;
         }
-        if(nFlags != 8)  SetCursorPos(mouse->Ptxy.x, mouse->Ptxy.y);//有按键按下，设置坐标。
-        switch (mouse->nAction) { //点击了几下
+        if(nFlags != 8)  SetCursorPos(mouse.Ptxy.x, mouse.Ptxy.y);//有按键按下，设置坐标。
+        switch (mouse.nAction) { //点击了几下
         case 0://单击
             nFlags = nFlags | 0x0010;
             break;
@@ -231,7 +231,7 @@ int  MouseEvent() {
             mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, GetMessageExtraInfo());
             break;
         case 0x0008://单纯的鼠标移动
-            mouse_event(MOUSEEVENTF_MOVE, mouse->Ptxy.x, mouse->Ptxy.y, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_MOVE, mouse.Ptxy.x, mouse.Ptxy.y, 0, GetMessageExtraInfo());
             break;
         }
     Cpacket pack1(5, NULL, 0);//应答数据，代表收到了数据。

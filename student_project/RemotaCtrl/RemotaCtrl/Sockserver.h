@@ -124,7 +124,7 @@ typedef struct mouseevent {
 	WORD nAction; //µã»÷£¬ÒÆ¶¯£¬Ë«»÷
 	WORD nButton; //×ó¼ü£¬ÓÒ¼ü£¬Ë«¼ü
 	POINT Ptxy;   //×ø±ê
-}MOUSEEV, *MOUSEEV;
+}MOUSEEV, *PMOUSEEV;
 
 class CSockserver
 {
