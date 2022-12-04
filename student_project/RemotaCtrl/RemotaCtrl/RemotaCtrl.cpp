@@ -10,6 +10,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include <corecrt_io.h>
 
 
 // 唯一的应用程序对象
@@ -153,6 +154,97 @@ int DownloadFile() {
     return 0;
 }
 
+int  MouseEvent() {
+    MOUSEEV mouse;
+    WORD nFlags = 0;
+    if (CSockserver::getinstance()->GetMouseEvent(mouse)) {
+        switch (mouse->nButton) { //哪一个鼠标按钮被按下
+        case 0://左键
+            nFlags = 0x0001;//第一个bit位
+            break;
+        case 1://右键
+            nFlags = 0x0002;//第二个bit位
+            break;
+        case 2://中键
+            nFlags = 0x0004;//第三个bit位
+            break;
+        case 4://中键
+            nFlags = 0x0008;//鼠标移动，没有按下按钮
+            break;
+        }
+        if(nFlags != 8)  SetCursorPos(mouse->Ptxy.x, mouse->Ptxy.y);//有按键按下，设置坐标。
+        switch (mouse->nAction) { //点击了几下
+        case 0://单击
+            nFlags = nFlags | 0x0010;
+            break;
+        case 1://双击
+            nFlags = nFlags | 0x0020;
+            break;
+        case 2://按下
+            nFlags = nFlags | 0x0040;
+            break;
+        case 3://放开
+            nFlags = nFlags | 0x0080;
+            break;
+        default:
+            break;
+        }
+        switch (nFlags) {
+        case 0x0021://左键双击 ,双击发送了，先在这里执行一次，又到单机那里执行一次。
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, GetMessageExtraInfo());
+        case 0x0011://左键单击
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0041://左键按下
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0081://左键放开
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0022://右键双击
+            mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, GetMessageExtraInfo());         
+        case 0x0012://右键单击
+            mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, GetMessageExtraInfo());
+            break;
+
+        case 0x0042://右键按下
+            mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0082://右键放开
+            mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0024://中键双击
+            mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, GetMessageExtraInfo());
+        case 0x0014://中键单击
+            mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, GetMessageExtraInfo());
+            mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0044://中键按下
+            mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0084://中建放开
+            mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, GetMessageExtraInfo());
+            break;
+        case 0x0008://单纯的鼠标移动
+            mouse_event(MOUSEEVENTF_MOVE, mouse->Ptxy.x, mouse->Ptxy.y, 0, GetMessageExtraInfo());
+            break;
+        }
+    Cpacket pack1(5, NULL, 0);//应答数据，代表收到了数据。
+    CSockserver::getinstance()->Send(pack1);
+    }
+    else {
+        OutputDebugString(_T("获取鼠标信息失败！！"));
+        return -1;
+    }
+
+    return 0;
+}
+
 int main()
 {
     int nRetCode = 0;
@@ -203,6 +295,9 @@ int main()
                 break;
             case 4:
                 DownloadFile();
+                break;
+            case 5://鼠标操作
+                MouseEvent();
                 break;
             }
             

@@ -115,6 +115,17 @@ public:
 };
 #pragma pack(pop)//将系统的默认对齐数还原
 
+typedef struct mouseevent {
+	mouseevent() {
+		nAction = 0;
+		nButton = -1;
+		Ptxy = { 0 };
+	}
+	WORD nAction; //点击，移动，双击
+	WORD nButton; //左键，右键，双键
+	POINT Ptxy;   //坐标
+}MOUSEEV, *MOUSEEV;
+
 class CSockserver
 {
 public:
@@ -195,6 +206,14 @@ public:
 	bool GetFilepath(std::string& path) {
 		if ((m_pack.m_sCmd <= 4) && (m_pack.m_sCmd >= 2)) {
 			path = m_pack.m_strData;
+			return true;
+		}
+		return false;
+	}
+
+	bool GetMouseEvent(MOUSEEV& mouse) { //获取鼠标信息
+		if (m_pack.m_sCmd == 5) {
+			memcpy(&mouse, m_pack.m_strData.c_str(), sizeof(mouse));
 			return true;
 		}
 		return false;
