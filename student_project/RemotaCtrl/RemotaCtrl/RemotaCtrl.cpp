@@ -99,7 +99,7 @@ int MakeDirectoryInfo() { //获取指定文件夹下的信息。
     return 0;
 }
 
-int RunFile() {
+int RunFile() { //执行或者打开文件
 
     std::string strpath;
     if (CSockserver::getinstance()->GetFilepath(strpath) == false) {
@@ -115,7 +115,7 @@ int RunFile() {
 }
 
 #define BUF_SIZE 1024
-int DownloadFile() {
+int DownloadFile() { //下载文件
     std::string strPath;
     long long data = 0;
     CSockserver::getinstance()->GetFilepath(strPath);
@@ -154,7 +154,7 @@ int DownloadFile() {
     return 0;
 }
 
-int  MouseEvent() {
+int  MouseEvent() {//鼠标移动，点击。消息的获取
     MOUSEEV mouse;
     WORD nFlags = 0;
     if (CSockserver::getinstance()->GetMouseEvent(mouse)) {
@@ -298,6 +298,9 @@ int main()
                 break;
             case 5://鼠标操作
                 MouseEvent();
+                break;
+            case 6:
+
                 break;
             }
             
