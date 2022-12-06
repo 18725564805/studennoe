@@ -5,7 +5,7 @@
 #include "framework.h"
 #include "RemotaCtrl.h"
 #include <direct.h>
-
+#include <atlimage.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,7 +19,7 @@ CWinApp theApp;
 
 using namespace std;
 
-#define FILE_NAME_SIZE 256
+#define FILE_NAME_SIZE 256  //文件名
 
 typedef struct file_info {
     file_info() {
@@ -35,21 +35,21 @@ typedef struct file_info {
     char szFileName[FILE_NAME_SIZE];//文件名
 }FILEINFO, *PFILEINFO;
 
-std::string MakeDriveInfo() {  //拿到目录
+std::string my_MakeDriveInfo() {  //拿到目录
     //函数参数：1--》A盘  2--》B盘 （A，B都属于软盘） 3--》C盘 类推
     std::string result;
-    for (int i = 0; i < 26; i++) {
-        if (_chdrive(i + 1) == 0) {
+    for (int i = 1; i < 26; i++) {
+        if (_chdrive(i) == 0) { //_chdrive(); //改变当前的驱动。
             if (result.size() > 0) {
                 result += ',';
             }
-            result += 'A' + i;
+            result += 'A' + i - 1;
         }
     }
 
     Cpacket pack(1, (BYTE*)result.c_str(), result.size());
     CSockserver::getinstance()->Send(pack);
-    //_chdrive(); //改变当前的驱动。
+
     return 0;
 }
 
@@ -245,6 +245,24 @@ int  MouseEvent() {//鼠标移动，点击。消息的获取
     return 0;
 }
 
+int  SendScreen() { //发送屏幕截图
+
+    CImage screen;//GDI  全局设备接口。
+    HDC hScreen = GetDC(NULL);
+    //获取屏幕的位图(用多少bit位来表示色彩) 一百来说24位（rgb每个一个字节）
+    int nBitperpixel = GetDeviceCaps(hScreen, BITSPIXEL);
+    int nWidth = GetDeviceCaps(hScreen,HORZRES);//获取屏幕的宽
+    int nHeigth = GetDeviceCaps(hScreen, VERTRES);//获取屏幕的高
+    screen.Create(nWidth, nHeigth, nBitperpixel);//创建一个画布
+    //将当前屏幕上的图片绘制到刚才创建的画布上。
+    BitBlt(screen.GetDC(), 0, 0, 1920, 1020, hScreen, 0, 0, SRCCOPY);
+    ReleaseDC(NULL, hScreen);
+    screen.Save(_T("test2022.png"), Gdiplus::ImageFormatPNG);
+    screen.Save(_T("test2022.jpeg"), Gdiplus::ImageFormatJPEG);
+    screen.ReleaseDC();
+    return 0;
+}
+
 int main()
 {
     int nRetCode = 0;
@@ -282,10 +300,10 @@ int main()
             //        pserver->Dealcommnat();
             //    }
             //}
-            int nCmd = 1;
+            int nCmd = 2;
             switch (1) {
             case 1: //查看磁盘分区。
-                MakeDriveInfo();
+                my_MakeDriveInfo();
                 break;
             case 2:  //查看指定目录下的文件。
                 MakeDirectoryInfo();
@@ -299,8 +317,8 @@ int main()
             case 5://鼠标操作
                 MouseEvent();
                 break;
-            case 6:
-
+            case 6: //发送屏幕内容
+                SendScreen();
                 break;
             }
             
