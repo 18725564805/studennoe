@@ -35,7 +35,7 @@ typedef struct file_info {
     char szFileName[FILE_NAME_SIZE];//文件名
 }FILEINFO, *PFILEINFO;
 
-std::string my_MakeDriveInfo() {  //拿到目录
+int my_MakeDriveInfo() {  //拿到目录
     //函数参数：1--》A盘  2--》B盘 （A，B都属于软盘） 3--》C盘 类推
     std::string result;
     for (int i = 1; i < 26; i++) {
@@ -257,8 +257,28 @@ int  SendScreen() { //发送屏幕截图
     //将当前屏幕上的图片绘制到刚才创建的画布上。
     BitBlt(screen.GetDC(), 0, 0, 1920, 1020, hScreen, 0, 0, SRCCOPY);
     ReleaseDC(NULL, hScreen);
-    screen.Save(_T("test2022.png"), Gdiplus::ImageFormatPNG);
-    screen.Save(_T("test2022.jpeg"), Gdiplus::ImageFormatJPEG);
+    HGLOBAL hMen = GlobalAlloc(GMEM_MOVEABLE, 0);
+    if (hMen == NULL) return -1;
+    IStream* pStream = NULL;
+    HRESULT ret = CreateStreamOnHGlobal(hMen, TRUE, &pStream);
+    //DWORD tick = GetTickCount64();//获取当前时间，毫秒级
+    //screen.Save(pStream, Gdiplus::ImageFormatPNG);//更小一点，清晰度差不多
+    //TRACE("pnd %d\r\n", GetTickCount64() - tick);
+    //tick = GetTickCount64();
+  /*  screen.Save(_T("test2022.jpeg"), Gdiplus::ImageFormatJPEG); 
+    TRACE("jpeg %d\r\n", GetTickCount64() - tick);*/
+    if (ret = S_OK) {
+        screen.Save(pStream, Gdiplus::ImageFormatPNG);
+        LARGE_INTEGER bg = { 0 };
+        pStream->Seek(bg, STREAM_SEEK_SET, NULL);
+        PBYTE pData = (PBYTE)GlobalLock(hMen);
+        SIZE_T nSize = GlobalSize(hMen);
+        Cpacket pack(6, pData, nSize);
+        //CSockserver::getinstance()->Send(pack);
+        GlobalUnlock(hMen);
+    }
+    pStream->Release();
+    GlobalFree(hMen);
     screen.ReleaseDC();
     return 0;
 }
@@ -301,7 +321,7 @@ int main()
             //    }
             //}
             int nCmd = 2;
-            switch (1) {
+            switch (6) {
             case 1: //查看磁盘分区。
                 my_MakeDriveInfo();
                 break;
