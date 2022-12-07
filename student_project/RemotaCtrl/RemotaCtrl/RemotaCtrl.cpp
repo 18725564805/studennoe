@@ -85,7 +85,7 @@ int MakeDirectoryInfo() { //获取指定文件夹下的信息。
         FILEINFO finfo;
         memcpy(finfo.szFileName, fdata.name, strlen(fdata.name));
         //fdata.attrib & _A_SUBDIR != 0  ||| fdata.attrib中有_A_SUBDIR属性，说明他是目录。
-        finfo.IsDirectory = (fdata.attrib & _A_SUBDIR != 0);
+        finfo.IsDirectory = ((fdata.attrib & _A_SUBDIR) != 0);
         memcpy(finfo.szFileName, fdata.name, strlen(fdata.name));
         //listFileinfos.push_back(finfo);
         Cpacket pack(2, (BYTE*)&finfo, sizeof(finfo));
@@ -283,6 +283,18 @@ int  SendScreen() { //发送屏幕截图
     return 0;
 }
 
+int LockMachine()
+{
+
+    return 0;
+}
+
+int UnlockMachine()
+{
+
+    return 0;
+}
+
 int main()
 {
     int nRetCode = 0;
@@ -339,6 +351,12 @@ int main()
                 break;
             case 6: //发送屏幕内容
                 SendScreen();
+                break;
+            case 7: //锁机
+                LockMachine();
+                break;
+            case 8:// 解锁
+                UnlockMachine();
                 break;
             }
             
