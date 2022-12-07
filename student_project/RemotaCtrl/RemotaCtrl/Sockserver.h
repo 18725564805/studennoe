@@ -255,7 +255,7 @@ private:
 
 private:
 	SOCKET m_sock;
-	SOCKET m_client;
+	SOCKET m_client = -1;
 	Cpacket m_pack;
 	static CSockserver* pserver;
 	static Cheap help;

@@ -6,6 +6,7 @@
 #include "RemotaCtrl.h"
 #include <direct.h>
 #include <atlimage.h>
+#include "LockDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,6 +21,8 @@ CWinApp theApp;
 using namespace std;
 
 #define FILE_NAME_SIZE 256  //文件名
+
+CLockDialog dig;
 
 typedef struct file_info {
     file_info() {
@@ -283,15 +286,80 @@ int  SendScreen() { //发送屏幕截图
     return 0;
 }
 
+unsigned int threadID = 0;
+
+unsigned __stdcall ThreadLockDlg(void* arg) {
+
+    dig.Create(IDD_DIALOG_INFO, NULL); // 创建一个对话框
+    dig.ShowWindow(SW_SHOW); //设置非模态对话框
+    //遮蔽后台窗口。
+  /*  CRect rect;
+    rect.left = 0;
+    rect.top = 0;
+    rect.right = GetSystemMetrics(SM_CXFULLSCREEN);
+    rect.bottom = GetSystemMetrics(SM_CYFULLSCREEN);
+    dig.MoveWindow(rect);
+    rect.bottom *= 0.5;
+    dig.SetWindowPos(&dig.wndTopMost, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);*/ // 设置对话框位置。
+
+    ShowCursor(false);//限制鼠标功能
+
+    //隐藏任务栏
+    //::ShowWindow(::FindWindow(_T("shell_trayWnd"), NULL), SW_HIDE);
+
+   /* rect.left = 0;
+    rect.top = 0;
+    rect.right = 1;
+    rect.bottom = 1;
+    ClipCursor(rect);*///限制鼠标活动范围
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+        if (msg.message == WM_KEYDOWN) {//有按键按下
+            if (msg.wParam == 0x1B) {   //按键为esc
+                break;
+            }
+        }
+    }
+    ShowCursor(true);
+   // dig.DestroyWindow(); //销毁对话框
+
+    //展示任务栏
+    //::ShowWindow(::FindWindow(_T("shell_trayWnd"), NULL), SW_SHOW);
+
+    dig.DestroyWindow(); //销毁对话框
+
+    _endthreadex(0); //线程自动退出
+
+    return 0;
+}
+
 int LockMachine()
 {
+    //加一个互斥锁。
+    //为了防止控制端多次发送锁机命令而出现多次创建线程的情况。
+    if ((dig.m_hWnd != NULL) && (dig.m_hWnd != INVALID_HANDLE_VALUE)) {
+        //返回一个应答，代表锁机已经命令已经执行。
+        Cpacket pack(7, NULL, 0);
+        //CSockserver::getinstance()->Send(pack);
+        return 0;
+    } 
+    //_beginthread(ThreadLockDlg, 0, NULL); // 拉起一个线程
 
+    _beginthreadex(NULL, 0, ThreadLockDlg, NULL, 0, &threadID);
+
+    Cpacket pack(7, NULL, 0);
+    CSockserver::getinstance()->Send(pack);
     return 0;
 }
 
 int UnlockMachine()
 {
-
+    //将消息发送给指定的线程。
+    PostThreadMessage(threadID, WM_KEYDOWN, 0x1B, 0);
+    Cpacket pack(8, NULL, 0);
+    CSockserver::getinstance()->Send(pack);
     return 0;
 }
 
@@ -312,6 +380,8 @@ int main()
         }
         else
         {
+            CSockserver* pserver = CSockserver::getinstance();
+            //创建对话框
             //CSockserver* pserver = CSockserver::getinstance();
             //// TODO: 在此处为应用程序的行为编写代码。
             //if (pserver) {
@@ -333,7 +403,7 @@ int main()
             //    }
             //}
             int nCmd = 2;
-            switch (6) {
+            switch (7) {
             case 1: //查看磁盘分区。
                 my_MakeDriveInfo();
                 break;
@@ -353,13 +423,22 @@ int main()
                 SendScreen();
                 break;
             case 7: //锁机
+                /* 锁机后为了防止在锁机函数阻塞，我们另起动一个线程，让该子线程去提示用户，主线程
+                继续接收客户端（控制端）信息*/
                 LockMachine();
+                //延时500毫秒，如果不延时，可能第一个线程还没拉起来，第二个线程也开始了。线程不同步了
+                //需要加一个互斥锁，来确保线程同步
+                //Sleep(500);
+                //LockMachine();
                 break;
             case 8:// 解锁
                 UnlockMachine();
                 break;
             }
-            
+            Sleep(5000);
+            UnlockMachine();
+            while (dig.m_hWnd != NULL)
+                Sleep(10);
         }
     }
     else
